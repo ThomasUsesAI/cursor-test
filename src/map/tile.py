@@ -1,82 +1,75 @@
-from dataclasses import dataclass
+from enum import Enum
 from typing import Tuple
-from enum import Enum, auto
 
 class TileType(Enum):
-    """Enumeration of possible tile types in the game.
-    
-    Each tile type has different properties and interactions:
-    - FLOOR: Can be walked on
-    - WALL: Blocks movement and sight
-    - DOOR: Can be opened/closed
-    - VOID: Out of bounds/not generated
-    """
-    FLOOR = auto()
-    WALL = auto()
-    DOOR = auto()
-    VOID = auto()
+    """Types of tiles that can exist in the game map."""
+    VOID = 0   # Empty space
+    WALL = 1   # Wall
+    FLOOR = 2  # Floor
 
-@dataclass
 class Tile:
-    """Represents a single tile in the game map.
+    """A single tile in the game map.
     
     Attributes:
         type (TileType): The type of tile
-        blocks_movement (bool): Whether entities can move through this tile
-        blocks_sight (bool): Whether this tile blocks line of sight
-        explored (bool): Whether the player has seen this tile
-        visible (bool): Whether the tile is currently visible
-        char (str): Character representation of the tile
-        color (Tuple[int, int, int]): RGB color of the tile
+        char (str): Character used to represent the tile
+        color (Tuple[int, int, int]): RGB color values
     """
-    type: TileType
-    blocks_movement: bool = False
-    blocks_sight: bool = False
-    explored: bool = False
-    visible: bool = False
-    char: str = '.'
-    color: Tuple[int, int, int] = (255, 255, 255)  # White
     
-    @classmethod
-    def floor(cls) -> 'Tile':
-        """Create a floor tile."""
-        return cls(
-            type=TileType.FLOOR,
-            blocks_movement=False,
-            blocks_sight=False,
-            char='.',
-            color=(64, 64, 64)  # Dark gray
-        )
+    def __init__(self, tile_type: TileType, char: str,
+                 color: Tuple[int, int, int]):
+        """Initialize a new tile.
+        
+        Args:
+            tile_type (TileType): The type of tile
+            char (str): Character used to represent the tile
+            color (Tuple[int, int, int]): RGB color values
+        """
+        self.type = tile_type
+        self.char = char
+        self.color = color
     
-    @classmethod
-    def wall(cls) -> 'Tile':
-        """Create a wall tile."""
-        return cls(
-            type=TileType.WALL,
-            blocks_movement=True,
-            blocks_sight=True,
-            char='#',
-            color=(128, 128, 128)  # Gray
-        )
+    @property
+    def walkable(self) -> bool:
+        """Whether entities can walk on this tile.
+        
+        Returns:
+            bool: True if walkable, False otherwise
+        """
+        return self.type == TileType.FLOOR
     
-    @classmethod
-    def door(cls) -> 'Tile':
-        """Create a door tile."""
-        return cls(
-            type=TileType.DOOR,
-            blocks_movement=True,
-            blocks_sight=True,
-            char='+',
-            color=(139, 69, 19)  # Brown
-        )
+    @property
+    def transparent(self) -> bool:
+        """Whether light/sight can pass through this tile.
+        
+        Returns:
+            bool: True if transparent, False otherwise
+        """
+        return self.type != TileType.WALL
     
-    @classmethod
-    def void(cls) -> 'Tile':
-        """Create a void tile."""
-        return cls(
-            type=TileType.VOID,
-            blocks_movement=True,
-            blocks_sight=True,
-            char=' ',
-            color=(0, 0, 0)  # Black
-        )
+    @staticmethod
+    def wall() -> 'Tile':
+        """Create a wall tile.
+        
+        Returns:
+            Tile: A new wall tile
+        """
+        return Tile(TileType.WALL, '#', (128, 128, 128))
+    
+    @staticmethod
+    def floor() -> 'Tile':
+        """Create a floor tile.
+        
+        Returns:
+            Tile: A new floor tile
+        """
+        return Tile(TileType.FLOOR, '.', (64, 64, 64))
+    
+    @staticmethod
+    def void() -> 'Tile':
+        """Create a void tile.
+        
+        Returns:
+            Tile: A new void tile
+        """
+        return Tile(TileType.VOID, ' ', (0, 0, 0))
