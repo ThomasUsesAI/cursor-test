@@ -1,28 +1,22 @@
 import pygame
-from typing import Tuple, Optional, Dict
+from typing import Optional, Tuple
 from src.engine.game_state import GameState
-from src.map.tile import TileType
-from src.game.crystal import Crystal
-import time
+from src.game.crystal import CrystalType
 
 class GameEngine:
-    """Game engine handling rendering and input.
-    
-    This class is responsible for:
-    - Initializing the game window
-    - Handling the game loop
-    - Processing input
-    - Rendering the game state
+    """Main game engine handling rendering and input.
     
     Attributes:
-        screen (pygame.Surface): The game window surface
-        state (GameState): Current game state
-        cell_size (int): Size of each tile in pixels
-        running (bool): Whether the game is running
+        screen_width (int): Window width in pixels
+        screen_height (int): Window height in pixels
+        tile_size (int): Size of each tile in pixels
+        game_state (GameState): Current game state
+        screen (pygame.Surface): Pygame display surface
+        running (bool): Whether game is running
+        last_movement (Tuple[int, int]): Last movement direction
     """
     
-    def __init__(self, screen_width: int = 800, screen_height: int = 600,
-                 title: str = "Resonance Maze"):
+    def __init__(self, screen_width: int, screen_height: int, title: str = "Roguelike"):
         """Initialize the game engine.
         
         Args:
@@ -31,46 +25,26 @@ class GameEngine:
             title (str): Window title
         """
         pygame.init()
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+        self.tile_size = 20
+        
+        # Calculate map size based on screen dimensions
+        map_width = screen_width // self.tile_size
+        map_height = screen_height // self.tile_size
+        
+        self.game_state = GameState(map_width, map_height)
         self.screen = pygame.display.set_mode((screen_width, screen_height))
         pygame.display.set_caption(title)
         
-        self.cell_size = 12
-        self.state = GameState()
         self.running = True
+        self.last_movement = (0, 0)  # Track last movement for ability use
         
-        # Movement settings
-        self.move_cooldown = 0.1  # seconds between moves
-        self.last_move_time = 0.0
-        
-        # Colors
-        self.colors = {
-            TileType.WALL: (128, 128, 128),  # Gray
-            TileType.FLOOR: (64, 64, 64),    # Dark gray
-            TileType.VOID: (0, 0, 0),        # Black
-            'player': (0, 255, 255),         # Cyan
-            'ui_bg': (32, 32, 32),           # Dark gray
-            'ui_text': (255, 255, 255),      # White
-            'ui_highlight': (255, 255, 0),    # Yellow
-        }
-        
-        # Font
+        # Initialize font for UI
         self.font = pygame.font.Font(None, 24)
     
-    def start(self) -> None:
-        """Start the game loop."""
-        clock = pygame.time.Clock()
-        
-        while self.running:
-            self._handle_events()
-            self._handle_held_keys()
-            self.state.update()
-            self._render()
-            clock.tick(60)
-        
-        pygame.quit()
-    
-    def _handle_events(self) -> None:
-        """Handle one-time input events."""
+    def handle_input(self) -> None:
+        """Handle keyboard input."""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -78,94 +52,72 @@ class GameEngine:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
-    
-    def _handle_held_keys(self) -> None:
-        """Handle continuously held keys with movement cooldown."""
-        current_time = time.time()
-        if current_time - self.last_move_time < self.move_cooldown:
-            return
+                
+                # Ability hotkeys
+                elif event.key == pygame.K_SPACE:
+                    # Use Heat Crystal dash ability if unlocked
+                    if self.last_movement != (0, 0):
+                        self.game_state.use_ability(
+                            CrystalType.HEAT,
+                            self.last_movement[0],
+                            self.last_movement[1]
+                        )
         
-        # Get all currently held keys
+        # Handle held movement keys
         keys = pygame.key.get_pressed()
-        moved = False
+        dx = 0
+        dy = 0
         
-        if keys[pygame.K_UP]:
-            moved = self.state.move_player(0, -1)
-        elif keys[pygame.K_DOWN]:
-            moved = self.state.move_player(0, 1)
-        elif keys[pygame.K_LEFT]:
-            moved = self.state.move_player(-1, 0)
-        elif keys[pygame.K_RIGHT]:
-            moved = self.state.move_player(1, 0)
+        if keys[pygame.K_LEFT] or keys[pygame.K_h]:
+            dx = -1
+        elif keys[pygame.K_RIGHT] or keys[pygame.K_l]:
+            dx = 1
         
-        if moved:
-            self.last_move_time = current_time
+        if keys[pygame.K_UP] or keys[pygame.K_k]:
+            dy = -1
+        elif keys[pygame.K_DOWN] or keys[pygame.K_j]:
+            dy = 1
+        
+        if dx != 0 or dy != 0:
+            if self.game_state.move_player(dx, dy):
+                self.last_movement = (dx, dy)
     
-    def _render(self) -> None:
-        """Render the current game state."""
-        self.screen.fill(self.colors[TileType.VOID])
+    def render(self) -> None:
+        """Render the game state."""
+        self.screen.fill((0, 0, 0))  # Clear screen
         
-        # Calculate viewport
-        player_x, player_y = self.state.player_pos
-        viewport_width = self.screen.get_width() // self.cell_size
-        viewport_height = (self.screen.get_height() - 100) // self.cell_size
-        
-        viewport_x = max(0, min(player_x - viewport_width // 2,
-                              self.state.game_map.width - viewport_width))
-        viewport_y = max(0, min(player_y - viewport_height // 2,
-                              self.state.game_map.height - viewport_height))
-        
-        # Render map
-        for y in range(viewport_height):
-            for x in range(viewport_width):
-                map_x = viewport_x + x
-                map_y = viewport_y + y
-                
-                if not self.state.game_map.in_bounds(map_x, map_y):
-                    continue
-                
-                tile = self.state.game_map.get_tile(map_x, map_y)
-                color = self.colors[tile.type]
-                
-                screen_x = x * self.cell_size
-                screen_y = y * self.cell_size
+        # Render map tiles
+        for y in range(self.game_state.game_map.height):
+            for x in range(self.game_state.game_map.width):
+                tile = self.game_state.game_map.get_tile(x, y)
+                color = (100, 100, 100) if tile.walkable else (50, 50, 50)
                 
                 pygame.draw.rect(
                     self.screen,
                     color,
-                    (screen_x, screen_y, self.cell_size, self.cell_size)
+                    (x * self.tile_size, y * self.tile_size, self.tile_size, self.tile_size)
                 )
-        
-        # Render crystals
-        for room in self.state.rooms:
-            if not room.crystal:
-                continue
-            
-            crystal_x, crystal_y = room.crystal.position
-            screen_x = (crystal_x - viewport_x) * self.cell_size
-            screen_y = (crystal_y - viewport_y) * self.cell_size
-            
-            if (0 <= screen_x < self.screen.get_width() and
-                0 <= screen_y < self.screen.get_height()):
-                color = room.crystal.color
-                if not room.crystal.is_active:
-                    color = tuple(c // 2 for c in color)  # Darker when inactive
                 
-                pygame.draw.rect(
-                    self.screen,
-                    color,
-                    (screen_x, screen_y, self.cell_size, self.cell_size)
+                # Draw tile character
+                text = self.font.render(tile.char, True, (200, 200, 200))
+                text_rect = text.get_rect(
+                    center=(
+                        x * self.tile_size + self.tile_size // 2,
+                        y * self.tile_size + self.tile_size // 2
+                    )
                 )
+                self.screen.blit(text, text_rect)
         
-        # Render player
-        player_screen_x = (player_x - viewport_x) * self.cell_size
-        player_screen_y = (player_y - viewport_y) * self.cell_size
-        
-        pygame.draw.rect(
-            self.screen,
-            self.colors['player'],
-            (player_screen_x, player_screen_y, self.cell_size, self.cell_size)
-        )
+        # Render entities
+        for entity in self.game_state.entities:
+            text = self.font.render(entity.char, True, entity.color)
+            text_rect = text.get_rect(
+                center=(
+                    entity.x * self.tile_size + self.tile_size // 2,
+                    entity.y * self.tile_size + self.tile_size // 2
+                )
+            )
+            self.screen.blit(text, text_rect)
         
         # Render UI
         self._render_ui()
@@ -173,47 +125,56 @@ class GameEngine:
         pygame.display.flip()
     
     def _render_ui(self) -> None:
-        """Render the game UI."""
-        # UI background
-        ui_height = 100
-        ui_rect = pygame.Rect(0, self.screen.get_height() - ui_height,
-                            self.screen.get_width(), ui_height)
-        pygame.draw.rect(self.screen, self.colors['ui_bg'], ui_rect)
+        """Render game UI elements."""
+        # Render sequence progress
+        progress = self.game_state.sequence.progress
+        next_crystal = self.game_state.sequence.get_next_crystal_type()
         
-        # Sequence progress
-        progress = self.state.sequence_progress
-        progress_width = self.screen.get_width() - 40
-        progress_height = 20
-        progress_x = 20
-        progress_y = self.screen.get_height() - 80
+        if next_crystal:
+            # Show next crystal needed
+            text = f"Next: {next_crystal.name}"
+            color = (255, 255, 255)
+            if next_crystal in self.game_state.sequence.completed_types:
+                text = f"{next_crystal.name} UNLOCKED!"
+                color = (0, 255, 0)
+            
+            text_surface = self.font.render(text, True, color)
+            self.screen.blit(text_surface, (10, 10))
+            
+            # Show progress bar
+            bar_width = 200
+            bar_height = 20
+            pygame.draw.rect(
+                self.screen,
+                (50, 50, 50),
+                (10, 40, bar_width, bar_height)
+            )
+            pygame.draw.rect(
+                self.screen,
+                (0, 255, 0),
+                (10, 40, int(bar_width * progress), bar_height)
+            )
         
-        # Background bar
-        pygame.draw.rect(
-            self.screen,
-            (64, 64, 64),
-            (progress_x, progress_y, progress_width, progress_height)
-        )
+        # Show ability cooldowns
+        y_offset = 70
+        for crystal_type, ability in self.game_state.player.abilities.abilities.items():
+            if ability.is_unlocked:
+                cooldown_left = max(0, ability.cooldown - (time.time() - ability.last_use))
+                ready = cooldown_left == 0
+                
+                text = f"{crystal_type.name}: {'READY' if ready else f'{cooldown_left:.1f}s'}"
+                color = (0, 255, 0) if ready else (200, 200, 200)
+                
+                text_surface = self.font.render(text, True, color)
+                self.screen.blit(text_surface, (10, y_offset))
+                y_offset += 30
+    
+    def start(self) -> None:
+        """Start the game loop."""
+        while self.running:
+            self.handle_input()
+            self.game_state.update()
+            self.render()
+            pygame.time.Clock().tick(60)  # 60 FPS
         
-        # Progress bar
-        pygame.draw.rect(
-            self.screen,
-            (0, 255, 0),
-            (progress_x, progress_y,
-             int(progress_width * progress), progress_height)
-        )
-        
-        # Next crystal info
-        next_type = self.state.next_crystal_type
-        if next_type:
-            text = f"Next: {next_type.name}"
-            color = next_type.value[1]
-        else:
-            text = "Sequence Complete!"
-            color = (0, 255, 0)
-        
-        text_surface = self.font.render(text, True, color)
-        text_rect = text_surface.get_rect(
-            centerx=self.screen.get_width() // 2,
-            centery=self.screen.get_height() - 30
-        )
-        self.screen.blit(text_surface, text_rect)
+        pygame.quit()
