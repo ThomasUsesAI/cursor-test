@@ -1,5 +1,117 @@
 # Development Guidelines
 
+## Project Chunks & Development Phases
+
+### Phase 1: Core Engine & Basic Gameplay
+1. **Basic Game Engine** (1-2 iterations)
+   - Game loop
+   - Input handling
+   - Basic rendering
+   - Entity Component System foundation
+
+2. **Map Generation** (2-3 iterations)
+   - Basic grid system
+   - Room generation
+   - Corridor connection
+   - Obstacle placement
+
+3. **Player Mechanics** (2-3 iterations)
+   - Movement system
+   - Collision detection
+   - Field of view
+   - Basic UI elements
+
+### Phase 2: Quantum Mechanics
+1. **Time Manipulation** (2-3 iterations)
+   - Action recording
+   - Timeline management
+   - Temporal echo creation
+   - Paradox resolution
+
+2. **Quantum Energy System** (1-2 iterations)
+   - Energy management
+   - Recharge mechanics
+   - Visual feedback
+   - Balance tuning
+
+3. **Quantum Effects** (2-3 iterations)
+   - Probability fields
+   - Quantum tunneling
+   - Entanglement mechanics
+   - Superposition states
+
+### Phase 3: Content & Progression
+1. **Enemy System** (2-3 iterations)
+   - Basic AI behavior
+   - Enemy types
+   - Combat mechanics
+   - Pathfinding
+
+2. **Items & Equipment** (2-3 iterations)
+   - Inventory system
+   - Item effects
+   - Equipment slots
+   - Quantum modifications
+
+3. **Progression System** (2-3 iterations)
+   - Experience/leveling
+   - Skill unlocks
+   - Achievement tracking
+   - Meta-progression
+
+### Phase 4: Polish & Enhancement
+1. **Visual Enhancement** (1-2 iterations)
+   - Improved graphics
+   - Animations
+   - Particle effects
+   - UI polish
+
+2. **Audio Implementation** (1 iteration)
+   - Sound effects
+   - Background music
+   - Audio management
+
+3. **Performance Optimization** (1-2 iterations)
+   - Code profiling
+   - Memory optimization
+   - Loading improvements
+
+## Iteration Guidelines
+
+### Iteration Size
+Each iteration should be:
+- **Completable in 1-2 hours** of focused development
+- **Self-contained** with clear start/end points
+- **Testable** with defined success criteria
+- **Documented** with updated design docs
+
+### Iteration Structure
+1. **Planning** (10-15 minutes)
+   - Review requirements
+   - Define success criteria
+   - Outline implementation steps
+
+2. **Implementation** (30-60 minutes)
+   - Write code in small, testable chunks
+   - Follow clean code principles
+   - Add necessary documentation
+
+3. **Testing** (15-20 minutes)
+   - Run unit tests
+   - Manual testing
+   - Performance checks
+
+4. **Review & Documentation** (10-15 minutes)
+   - Code cleanup
+   - Update documentation
+   - Commit changes
+
+### Code Change Size
+- **Maximum 300 lines** of new code per iteration
+- **Maximum 3 files** modified significantly
+- **Maximum 1 major system** changed per iteration
+- Each commit should be atomic and reversible
+
 ## Core Development Principles
 
 ### 1. Structured Development Process
