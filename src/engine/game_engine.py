@@ -3,6 +3,7 @@ from typing import Tuple
 from src.engine.game_state import GameState
 from src.components.position import Position
 from src.components.renderable import Renderable
+from src.map.tile import Tile
 
 class GameEngine:
     """Main game engine class responsible for managing the game loop and core systems."""
@@ -74,6 +75,13 @@ class GameEngine:
         """Render the game."""
         self.screen.fill((0, 0, 0))  # Clear screen with black
         
+        # Render map tiles
+        for x in range(self.state.game_map.width):
+            for y in range(self.state.game_map.height):
+                tile = self.state.game_map.get_tile(x, y)
+                if tile:
+                    self._render_tile(x, y, tile)
+        
         # Render all entities
         for entity_id, components in self.state.entities.items():
             if Position in components and Renderable in components:
@@ -82,6 +90,28 @@ class GameEngine:
                 self._render_entity(pos, renderable)
         
         pygame.display.flip()
+    
+    def _render_tile(self, x: int, y: int, tile: Tile) -> None:
+        """Render a single map tile.
+        
+        Args:
+            x (int): X coordinate of the tile
+            y (int): Y coordinate of the tile
+            tile (Tile): The tile to render
+        """
+        # Create a surface with the character
+        text_surface = self.font.render(tile.char, True, tile.color)
+        
+        # Calculate screen position
+        screen_x = x * self.tile_size
+        screen_y = y * self.tile_size
+        
+        # Center the character in its tile
+        text_rect = text_surface.get_rect(center=(screen_x + self.tile_size // 2,
+                                                screen_y + self.tile_size // 2))
+        
+        # Draw to screen
+        self.screen.blit(text_surface, text_rect)
     
     def _render_entity(self, pos: Position, renderable: Renderable) -> None:
         """Render a single entity.
