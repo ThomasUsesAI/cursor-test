@@ -1,8 +1,9 @@
 import pygame
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict
 from src.engine.game_state import GameState
 from src.map.tile import TileType
 from src.game.crystal import Crystal
+import time
 
 class GameEngine:
     """Game engine handling rendering and input.
@@ -37,6 +38,10 @@ class GameEngine:
         self.state = GameState()
         self.running = True
         
+        # Movement settings
+        self.move_cooldown = 0.1  # seconds between moves
+        self.last_move_time = 0.0
+        
         # Colors
         self.colors = {
             TileType.WALL: (128, 128, 128),  # Gray
@@ -57,6 +62,7 @@ class GameEngine:
         
         while self.running:
             self._handle_events()
+            self._handle_held_keys()
             self.state.update()
             self._render()
             clock.tick(60)
@@ -64,7 +70,7 @@ class GameEngine:
         pygame.quit()
     
     def _handle_events(self) -> None:
-        """Handle input events."""
+        """Handle one-time input events."""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -72,14 +78,28 @@ class GameEngine:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
-                elif event.key == pygame.K_UP:
-                    self.state.move_player(0, -1)
-                elif event.key == pygame.K_DOWN:
-                    self.state.move_player(0, 1)
-                elif event.key == pygame.K_LEFT:
-                    self.state.move_player(-1, 0)
-                elif event.key == pygame.K_RIGHT:
-                    self.state.move_player(1, 0)
+    
+    def _handle_held_keys(self) -> None:
+        """Handle continuously held keys with movement cooldown."""
+        current_time = time.time()
+        if current_time - self.last_move_time < self.move_cooldown:
+            return
+        
+        # Get all currently held keys
+        keys = pygame.key.get_pressed()
+        moved = False
+        
+        if keys[pygame.K_UP]:
+            moved = self.state.move_player(0, -1)
+        elif keys[pygame.K_DOWN]:
+            moved = self.state.move_player(0, 1)
+        elif keys[pygame.K_LEFT]:
+            moved = self.state.move_player(-1, 0)
+        elif keys[pygame.K_RIGHT]:
+            moved = self.state.move_player(1, 0)
+        
+        if moved:
+            self.last_move_time = current_time
     
     def _render(self) -> None:
         """Render the current game state."""
