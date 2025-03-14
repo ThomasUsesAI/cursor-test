@@ -54,23 +54,21 @@ class GameState:
             map_width (int): Width of the game map
             map_height (int): Height of the game map
         """
-        self.game_map = GameMap(map_width, map_height)
+        # Generate initial dungeon
+        generator = DungeonGenerator(map_width, map_height)
+        self.game_map, self.rooms = generator.generate()
+        
         self.entities: List[Entity] = []
         self.player: Optional[Player] = None
         self.sequence = CrystalSequence()
-        
-        # Generate initial dungeon
-        generator = DungeonGenerator(map_width, map_height)
-        generator.generate(self.game_map)
         
         # Create player in first room center
         self._create_player()
     
     def _create_player(self) -> None:
         """Create the player entity in the center of the first room."""
-        rooms = self.game_map.rooms
-        if rooms:
-            room = rooms[0]
+        if self.rooms:
+            room = self.rooms[0]
             x = room.x + room.width // 2
             y = room.y + room.height // 2
         else:
