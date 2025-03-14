@@ -1,6 +1,7 @@
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 from src.map.game_map import GameMap
 from src.map.tile import Tile, TileType
+from src.game.crystal import Crystal, CrystalType
 import random
 
 class Room:
@@ -15,6 +16,7 @@ class Room:
         y (int): Y coordinate of top-left corner
         width (int): Width of the room
         height (int): Height of the room
+        crystal (Optional[Crystal]): Crystal in this room, if any
     """
     
     def __init__(self, x: int, y: int, width: int, height: int):
@@ -30,6 +32,7 @@ class Room:
         self.y = y
         self.width = width
         self.height = height
+        self.crystal: Optional[Crystal] = None
     
     @property
     def center(self) -> Tuple[int, int]:
@@ -83,6 +86,17 @@ class Room:
                 game_map.set_tile(self.x - 1, y, Tile.wall())
             if game_map.get_tile(self.x + self.width, y).type == TileType.VOID:
                 game_map.set_tile(self.x + self.width, y, Tile.wall())
+    
+    def add_crystal(self, crystal_type: Optional[CrystalType] = None) -> None:
+        """Add a crystal to this room.
+        
+        Args:
+            crystal_type (Optional[CrystalType]): Specific crystal type or random if None
+        """
+        if crystal_type is None:
+            crystal_type = random.choice(list(CrystalType))
+        
+        self.crystal = Crystal(crystal_type, self.center)
     
     @staticmethod
     def create_random(map_width: int, map_height: int,
