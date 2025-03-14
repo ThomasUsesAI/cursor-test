@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple, Set, Dict
 from src.map.game_map import GameMap
-from src.map.tile import Tile
+from src.map.tile import Tile, TileType
 from src.procedural.room import Room
 import random
 import math
