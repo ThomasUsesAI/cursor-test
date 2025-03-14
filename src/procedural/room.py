@@ -1,6 +1,6 @@
 from typing import Tuple, Optional
 from src.map.game_map import GameMap
-from src.map.tile import Tile
+from src.map.tile import Tile, TileType
 import random
 
 class Room:
