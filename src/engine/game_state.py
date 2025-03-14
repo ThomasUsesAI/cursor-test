@@ -134,7 +134,7 @@ class GameState:
             return False
         
         # Handle dash ability
-        if crystal_type == CrystalType.HEAT:
+        if crystal_type == CrystalType.RED:  # Heat crystal
             target_x, target_y = ability.get_dash_target(dx, dy, self.player.x, self.player.y)
             
             # Check if path is clear
