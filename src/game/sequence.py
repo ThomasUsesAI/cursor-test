@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Set
 from src.game.crystal import Crystal, CrystalType
 import random
 
@@ -12,6 +12,7 @@ class CrystalSequence:
         target_sequence (List[CrystalType]): The sequence to match
         current_sequence (List[Crystal]): Currently activated crystals
         max_sequence_length (int): Maximum length of the sequence
+        used_crystals (Set[Crystal]): Crystals that have been used in sequence
     """
     
     def __init__(self, sequence_length: int = 3):
@@ -23,6 +24,7 @@ class CrystalSequence:
         self.max_sequence_length = sequence_length
         self.target_sequence: List[CrystalType] = []
         self.current_sequence: List[Crystal] = []
+        self.used_crystals: Set[Crystal] = set()
         self._generate_sequence()
     
     def _generate_sequence(self) -> None:
@@ -43,8 +45,13 @@ class CrystalSequence:
         Returns:
             bool: True if the crystal matches the next in sequence
         """
-        # Remove any inactive crystals from the current sequence
+        # Remove any inactive crystals from the current sequence and used set
         self.current_sequence = [c for c in self.current_sequence if c.is_active]
+        self.used_crystals = {c for c in self.used_crystals if c.is_active}
+        
+        # Ignore if this crystal was already used
+        if crystal in self.used_crystals:
+            return False
         
         # Check if this activation matches the sequence
         current_pos = len(self.current_sequence)
@@ -53,10 +60,12 @@ class CrystalSequence:
         
         if crystal.crystal_type == self.target_sequence[current_pos]:
             self.current_sequence.append(crystal)
+            self.used_crystals.add(crystal)
             return True
         
         # Wrong crystal - reset sequence
         self.current_sequence = []
+        self.used_crystals.clear()
         return False
     
     @property
@@ -98,7 +107,7 @@ class CrystalSequence:
     def update(self) -> None:
         """Update the sequence state.
         
-        Removes inactive crystals from the current sequence.
+        Removes inactive crystals from the current sequence and used set.
         """
         # Update all crystals in the sequence
         for crystal in self.current_sequence:
@@ -106,3 +115,9 @@ class CrystalSequence:
         
         # Remove inactive crystals
         self.current_sequence = [c for c in self.current_sequence if c.is_active]
+        self.used_crystals = {c for c in self.used_crystals if c.is_active}
+        
+        # If any crystal became inactive, reset the sequence
+        if len(self.current_sequence) < len(self.used_crystals):
+            self.current_sequence = []
+            self.used_crystals.clear()
