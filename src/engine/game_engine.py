@@ -1,4 +1,5 @@
 import pygame
+import time
 from typing import Optional, Tuple
 from src.engine.game_state import GameState
 from src.game.crystal import CrystalType
@@ -58,7 +59,7 @@ class GameEngine:
                     # Use Heat Crystal dash ability if unlocked
                     if self.last_movement != (0, 0):
                         self.game_state.use_ability(
-                            CrystalType.HEAT,
+                            CrystalType.RED,  # Heat crystal
                             self.last_movement[0],
                             self.last_movement[1]
                         )
