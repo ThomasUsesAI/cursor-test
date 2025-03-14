@@ -45,7 +45,7 @@ class Dash(Ability):
         """Initialize the dash ability."""
         super().__init__(cooldown=0.5)  # 0.5 second cooldown
         self.distance = 3  # Dash 3 tiles
-        self.crystal_type = CrystalType.HEAT
+        self.crystal_type = CrystalType.RED  # Heat crystal
     
     def get_dash_target(self, dx: int, dy: int, x: int, y: int) -> Tuple[int, int]:
         """Calculate the target position for the dash.
@@ -74,7 +74,7 @@ class AbilityManager:
     def __init__(self):
         """Initialize the ability manager."""
         self.abilities = {
-            CrystalType.HEAT: Dash(),
+            CrystalType.RED: Dash(),  # Heat crystal dash
             # More abilities will be added in future chunks
         }
     
