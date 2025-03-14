@@ -1,10 +1,12 @@
-from typing import Dict, Type, Optional
+from typing import Dict, Type, Optional, List
 from src.components.position import Position
 from src.components.renderable import Renderable
 from src.components.player import Player
 from src.systems.movement_system import MovementSystem
 from src.map.game_map import GameMap
 from src.map.tile import Tile
+from src.procedural.dungeon_generator import DungeonGenerator
+from src.procedural.room import Room
 
 class GameState:
     """Manages the current state of the game, including entities and systems."""
@@ -16,21 +18,9 @@ class GameState:
             map_width (int): Width of the game map in tiles
             map_height (int): Height of the game map in tiles
         """
-        # Initialize map
-        self.game_map = GameMap(map_width, map_height)
-        
-        # Create some test walls around the edges
-        for x in range(map_width):
-            self.game_map.set_tile(x, 0, Tile.wall())
-            self.game_map.set_tile(x, map_height - 1, Tile.wall())
-        for y in range(map_height):
-            self.game_map.set_tile(0, y, Tile.wall())
-            self.game_map.set_tile(map_width - 1, y, Tile.wall())
-        
-        # Fill the rest with floor tiles
-        for x in range(1, map_width - 1):
-            for y in range(1, map_height - 1):
-                self.game_map.set_tile(x, y, Tile.floor())
+        # Generate dungeon
+        generator = DungeonGenerator(map_width, map_height)
+        self.game_map, self.rooms = generator.generate()
         
         # Entity management
         self.entities: Dict[int, Dict[Type, object]] = {}
@@ -39,13 +29,21 @@ class GameState:
         # Initialize systems
         self.movement_system = MovementSystem(map_width, map_height)
         
-        # Create player
+        # Create player in the center of the first room
         self._create_player()
     
     def _create_player(self) -> None:
         """Create the player entity with necessary components."""
+        if not self.rooms:
+            # Fallback to map center if no rooms
+            start_x = self.game_map.width // 2
+            start_y = self.game_map.height // 2
+        else:
+            # Place in the center of the first room
+            start_x, start_y = self.rooms[0].center
+        
         player_components = {
-            Position: Position(self.game_map.width // 2, self.game_map.height // 2),
+            Position: Position(start_x, start_y),
             Renderable: Renderable('@', (0, 255, 255)),  # Cyan color
             Player: Player()
         }
