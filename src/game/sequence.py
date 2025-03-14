@@ -13,6 +13,7 @@ class CrystalSequence:
         current_sequence (List[Crystal]): Currently activated crystals
         max_sequence_length (int): Maximum length of the sequence
         used_crystals (Set[Crystal]): Crystals that have been used in sequence
+        completed_types (Set[CrystalType]): Crystal types that have been permanently unlocked
     """
     
     def __init__(self, sequence_length: int = 3):
@@ -25,16 +26,19 @@ class CrystalSequence:
         self.target_sequence: List[CrystalType] = []
         self.current_sequence: List[Crystal] = []
         self.used_crystals: Set[Crystal] = set()
+        self.completed_types: Set[CrystalType] = set()
         self._generate_sequence()
     
     def _generate_sequence(self) -> None:
         """Generate a new random target sequence."""
         self.target_sequence = []
-        crystal_types = list(CrystalType)
+        available_types = [t for t in CrystalType if t not in self.completed_types]
         
-        for _ in range(self.max_sequence_length):
-            crystal_type = random.choice(crystal_types)
-            self.target_sequence.append(crystal_type)
+        if not available_types:
+            return  # All sequences completed
+            
+        crystal_type = random.choice(available_types)
+        self.target_sequence = [crystal_type]  # Only one type at a time now
     
     def add_crystal(self, crystal: Crystal) -> bool:
         """Add a crystal to the current sequence.
@@ -45,6 +49,10 @@ class CrystalSequence:
         Returns:
             bool: True if the crystal matches the next in sequence
         """
+        # If this type is already completed, ignore it
+        if crystal.crystal_type in self.completed_types:
+            return False
+        
         # Remove any inactive crystals from the current sequence and used set
         self.current_sequence = [c for c in self.current_sequence if c.is_active]
         self.used_crystals = {c for c in self.used_crystals if c.is_active}
@@ -61,6 +69,12 @@ class CrystalSequence:
         if crystal.crystal_type == self.target_sequence[current_pos]:
             self.current_sequence.append(crystal)
             self.used_crystals.add(crystal)
+            
+            # If sequence is complete, permanently unlock this type
+            if self.is_complete:
+                self.completed_types.add(crystal.crystal_type)
+                self._generate_sequence()  # Generate new sequence for next type
+            
             return True
         
         # Wrong crystal - reset sequence
@@ -85,19 +99,30 @@ class CrystalSequence:
         return True
     
     @property
+    def all_completed(self) -> bool:
+        """Check if all crystal types have been completed.
+        
+        Returns:
+            bool: True if all crystal types are unlocked
+        """
+        return len(self.completed_types) == len(CrystalType)
+    
+    @property
     def progress(self) -> float:
         """Get the current sequence completion progress.
         
         Returns:
             float: Progress from 0.0 to 1.0
         """
+        if not self.target_sequence:
+            return 1.0
         return len(self.current_sequence) / len(self.target_sequence)
     
     def get_next_crystal_type(self) -> Optional[CrystalType]:
         """Get the next crystal type needed in the sequence.
         
         Returns:
-            Optional[CrystalType]: The next crystal type or None if complete
+            Optional[CrystalType]: Next crystal type or None if complete
         """
         current_pos = len(self.current_sequence)
         if current_pos >= len(self.target_sequence):
@@ -117,7 +142,9 @@ class CrystalSequence:
         self.current_sequence = [c for c in self.current_sequence if c.is_active]
         self.used_crystals = {c for c in self.used_crystals if c.is_active}
         
-        # If any crystal became inactive, reset the sequence
-        if len(self.current_sequence) < len(self.used_crystals):
+        # If any crystal became inactive and we haven't completed this type,
+        # reset the sequence
+        if (len(self.current_sequence) < len(self.used_crystals) and
+            not self.target_sequence[0] in self.completed_types):
             self.current_sequence = []
             self.used_crystals.clear()
