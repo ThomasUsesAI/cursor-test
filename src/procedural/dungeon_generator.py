@@ -144,11 +144,11 @@ class DungeonGenerator:
         for i, room1 in enumerate(rooms):
             for room2 in rooms[i + 1:]:
                 dist = self._distance_between(room1, room2)
-                possible_connections.append((dist, room1, room2))
+                possible_connections.append((dist, (room1, room2)))
         
         # Sort by distance and add some short connections
-        possible_connections.sort()
-        for _, room1, room2 in possible_connections[:num_extras]:
+        possible_connections.sort(key=lambda x: x[0])  # Sort by distance
+        for _, (room1, room2) in possible_connections[:num_extras]:
             self._create_corridor(game_map, room1.center, room2.center)
     
     def _distance_between(self, room1: Room, room2: Room) -> float:
