@@ -1,8 +1,8 @@
 from src.engine.game_engine import GameEngine
 
 def main():
-    """Entry point for the game."""
-    engine = GameEngine()
+    """Start the game."""
+    engine = GameEngine(800, 600, "The Resonance Maze")
     engine.start()
 
 if __name__ == "__main__":
